@@ -1,0 +1,69 @@
+services:
+  # Kanboard service
+  kanboard:
+    image: kanboard/kanboard:latest
+    container_name: kanboard
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - kanboard_data:/var/www/app/data
+      - kanboard_plugins:/var/www/app/plugins
+    environment:
+      - DATABASE_URL=sqlite:///var/www/app/data/db.sqlite
+      - DEBUG=false
+      - LOG_DRIVER=stdout
+      - MAIL_FROM=noreply@kanboard.local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Funda scraper service
+  funda-scraper:
+    build: .
+    container_name: funda_scraper_roermond
+    restart: unless-stopped
+    depends_on:
+      - kanboard
+    env_file:
+      - .env
+    environment:
+      # Search configuration (can be overridden in .env file)
+      - LOCATION=${LOCATION:-gemeente-amsterdam}
+      - DISTANCE=${DISTANCE:-5}
+      - MAX_PRICE=${MAX_PRICE:-450000}
+      - MIN_ROOMS=${MIN_ROOMS:-5}
+      - MIN_AREA=${MIN_AREA:-100}
+      
+      # Timing configuration
+      - FUNDA_SLEEP=${FUNDA_SLEEP:-5}
+      - PARARIUS_SLEEP=${PARARIUS_SLEEP:-5}
+      - JAAP_SLEEP=${JAAP_SLEEP:-5}
+      
+      # Logging
+      - LOG_DIR=${LOG_DIR:-/app/log}
+      
+      # Kanban configuration - using local Kanboard instance
+      - KANBAN_URL=${KANBAN_URL:-http://kanboard/jsonrpc.php}
+      - KANBAN_USERNAME=${KANBAN_USERNAME:-admin}
+      - KANBAN_PASSWORD=${KANBAN_PASSWORD:-admin}
+      - KANBAN_PROJECT_ID=${KANBAN_PROJECT_ID:-1}
+      - KANBAN_OWNER_ID=${KANBAN_OWNER_ID:-1}
+      - KANBAN_CREATOR_ID=${KANBAN_CREATOR_ID:-1}
+    volumes:
+      - ./logs:/app/log
+    ports:
+      - "8000:8000"  # Health check endpoint
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  kanboard_data:
+  kanboard_plugins:
