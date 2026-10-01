@@ -126,7 +126,10 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 def start_health_server(scraper_manager: Any | None = None):
     """Start enhanced health check server in background thread."""
-    server = HTTPServer(('0.0.0.0', 8000), HealthHandler)
+    # Binding to all interfaces is intentional: this runs inside a Docker
+    # container and must be reachable from the container's HEALTHCHECK and
+    # from docker-compose, not just from localhost inside the container.
+    server = HTTPServer(('0.0.0.0', 8000), HealthHandler)  # nosec B104
 
     # Attach scraper manager for status reporting
     if scraper_manager:
