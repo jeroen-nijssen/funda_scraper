@@ -1,0 +1,145 @@
+name: Scraper broken / site layout changed
+description: A scraper returns no (or wrong) listings, most likely because the site changed its HTML.
+title: "[Scraper]: "
+labels: ["bug", "scraper-broken", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Property sites change their markup regularly. When they do, the CSS
+        selectors in `app/funda.py`, `app/huispedia.py` or `app/pararius.py` stop
+        matching and the scraper logs `No listings found` while the site itself
+        still shows results. This template collects everything needed to fix the
+        selectors in one pass.
+
+        Please do **not** attach full HTML page dumps — a small snippet of the
+        listing card markup is far more useful, and large dumps may contain
+        personal data.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checks
+      options:
+        - label: I have searched existing issues for this site and found no open report.
+          required: true
+        - label: I opened the search URL in a normal browser and it *does* show matching listings.
+          required: true
+
+  - type: dropdown
+    id: site
+    attributes:
+      label: Which site is affected?
+      options:
+        - Funda.nl
+        - Huispedia.nl
+        - Pararius.nl
+        - Multiple sites
+    validations:
+      required: true
+
+  - type: textarea
+    id: search-url
+    attributes:
+      label: Search URL used
+      description: |
+        The URL the scraper requested — copy it from the log line
+        `Requesting data from: ...`, or reproduce it from your `.env` settings.
+      placeholder: https://www.funda.nl/koop/gemeente-amsterdam/0-450000/1-dag/+5km/
+    validations:
+      required: true
+
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: What did the parser return?
+      options:
+        - Zero listings ("No listings found" in the log)
+        - Fewer listings than the site shows
+        - Listings found, but one or more fields are empty or wrong
+        - Listings found, but the URLs are broken / malformed
+        - HTTP error or block page instead of results (403, 429, captcha)
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: field-detail
+    attributes:
+      label: Which fields are wrong?
+      description: |
+        If fields parse incorrectly, state for each of `street`, `city`, `price`,
+        `url` what was expected and what was produced.
+      placeholder: |
+        street: expected "Keizersgracht 123", got "Keizersgracht 123 Amsterdam €450.000"
+        price: empty
+    validations:
+      required: false
+
+  - type: input
+    id: current-selector
+    attributes:
+      label: Current selector that no longer matches
+      description: The selector from the scraper file, if you have identified it.
+      placeholder: 'soup.find_all("div", class_="search-result-content")'
+    validations:
+      required: false
+
+  - type: textarea
+    id: new-markup
+    attributes:
+      label: Current markup of a single listing card
+      description: |
+        Paste the HTML of **one** listing element from the live page
+        (browser devtools, right-click the card, Copy > Copy outerHTML).
+        Trim it down and remove anything that identifies a real person.
+      render: html
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v1.2.0 / 86940d7
+    validations:
+      required: true
+
+  - type: input
+    id: first-seen
+    attributes:
+      label: When did it start failing?
+      description: Approximate date, or the last date it was known to work.
+      placeholder: Stopped working around 2026-09-25; worked on 2026-09-20
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: The scraper log lines around the failure.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: ethics
+    attributes:
+      label: Scraping conduct
+      description: |
+        See [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#ethical-scraping) and
+        [DISCLAIMER.md](../blob/main/DISCLAIMER.md).
+      options:
+        - label: I am not requesting help with evading bot detection, captchas, or rate limits.
+          required: true
+        - label: I confirm this report contains no secrets and no personal data of sellers or agents.
+          required: true
+
+  - type: checkboxes
+    id: conduct
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](../blob/main/CODE_OF_CONDUCT.md).
+          required: true

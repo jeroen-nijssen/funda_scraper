@@ -14,8 +14,14 @@ COPY app/requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install headless Chromium + its OS-level dependencies for the Funda scraper
+RUN playwright install --with-deps chromium
+
 # Copy application code
 COPY app/ .
+
+# Kanboard bootstrap script, run once by the kanboard-init service
+COPY setup_kanboard.py .
 
 # Create log directory
 RUN mkdir -p /app/log
@@ -28,7 +34,7 @@ ENV MIN_ROOMS=5
 ENV MIN_AREA=100
 ENV FUNDA_SLEEP=3600
 ENV PARARIUS_SLEEP=1800
-ENV JAAP_SLEEP=3600
+ENV HUISPEDIA_SLEEP=3600
 ENV LOG_DIR=/app/log
 
 # Health check

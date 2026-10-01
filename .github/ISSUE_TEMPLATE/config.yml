@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or help with your setup
+    url: https://github.com/jeroen-nijssen/funda_scraper/discussions
+    about: Ask usage, configuration and Docker questions in Discussions — please do not open an issue for support requests.
+  - name: Ideas and general discussion
+    url: https://github.com/jeroen-nijssen/funda_scraper/discussions/categories/ideas
+    about: Float an idea before it becomes a feature request, or discuss project direction.
+  - name: Report a security vulnerability
+    url: https://github.com/jeroen-nijssen/funda_scraper/security/advisories/new
+    about: Report vulnerabilities privately through GitHub Security Advisories — never in a public issue.

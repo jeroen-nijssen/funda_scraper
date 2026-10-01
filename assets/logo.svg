@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="wr-logo-title">
+  <title id="wr-logo-title">Woningradar</title>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24.72 30.71 A9.00 9.00 0 0 1 39.28 30.71" stroke="#CC6A10" stroke-width="4.5"/>
+    <path d="M18.25 26.01 A17.00 17.00 0 0 1 45.75 26.01" stroke="#4A6E8F" stroke-width="4.5"/>
+    <path d="M11.77 21.31 A25.00 25.00 0 0 1 52.23 21.31" stroke="#4A6E8F" stroke-width="4.5"/>
+    <path d="M12.00 52.00 L32.00 36.00 L52.00 52.00" stroke="#4A6E8F" stroke-width="5.5"/>
+  </g>
+</svg>

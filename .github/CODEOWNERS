@@ -1,0 +1,17 @@
+# Code owners for Woningradar
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# the entries below exist so that changes to sensitive areas are never merged
+# without an explicit review from the maintainer.
+
+# CI/CD, release pipeline and dependency automation
+/.github/                   @jeroen-nijssen
+/.github/workflows/         @jeroen-nijssen
+/.github/dependabot.yml     @jeroen-nijssen
+
+# Project governance and legal
+/LICENSE                    @jeroen-nijssen
+/SECURITY.md                @jeroen-nijssen
+/CODE_OF_CONDUCT.md         @jeroen-nijssen
+/CONTRIBUTING.md            @jeroen-nijssen
+/DISCLAIMER.md              @jeroen-nijssen

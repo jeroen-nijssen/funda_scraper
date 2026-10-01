@@ -1,294 +1,273 @@
-# Funda Scraper - Improved Version
+<p align="center">
+  <img src="assets/banner.svg" alt="Woningradar — Nieuwe woningen op je radar" width="720">
+</p>
 
-A robust property scraper for Dutch real estate websites (Funda.nl, Jaap.nl, Pararius.nl) with integrated Kanboard for task management.
+<p align="center">
+  Houdt Funda, Huispedia en Pararius voor je in de gaten en zet elke nieuwe woning
+  automatisch op een Kanban-bord.
+</p>
 
-## Features
+---
 
-- **Multi-site scraping**: Funda, Jaap, and Pararius
-- **Integrated Kanboard**: Local Kanboard instance with automatic task creation
-- **Robust error handling**: Retry logic, proper logging, graceful failures
-- **Configurable**: Environment variables for all settings
-- **Health monitoring**: Built-in health check endpoints
-- **Testing**: Comprehensive unit tests
-- **Docker support**: Complete stack deployment with Docker Compose
+> [!WARNING]
+> Funda, Huispedia en Pararius bieden geen API aan en **ondersteunen geen
+> geautomatiseerd scrapen**. Je gebruikt dit project op eigen initiatief en voor
+> eigen risico. Lees eerst de **[disclaimer](DISCLAIMER.md)**.
 
-## Quick Start
+## Wat doet het?
 
-1. **Build and run the complete stack**:
-   ```bash
-   ./copy_funda_scraper_files.sh build
-   ./copy_funda_scraper_files.sh run
-   ```
-
-2. **Setup Kanboard with proper project structure**:
-   ```bash
-   ./copy_funda_scraper_files.sh setup
-   ```
-
-3. **Access Kanboard** (http://localhost:8080):
-   ```bash
-   ./copy_funda_scraper_files.sh kanboard
-   ```
-   - Default credentials: `admin/admin`
-   - Project "Property Listings" will be created automatically
-
-4. **Monitor the scraper**:
-   ```bash
-   ./copy_funda_scraper_files.sh logs
-   ./copy_funda_scraper_files.sh status
-   ```
-
-## Configuration
-
-Configure via environment variables in `docker-compose.yml`:
-
-### Search Parameters
-- `LOCATION`: Search location (default: `gemeente-amsterdam`)
-- `DISTANCE`: Search radius in km (default: `5`)
-- `MAX_PRICE`: Maximum price (default: `450000`)
-- `MIN_ROOMS`: Minimum rooms (default: `5`)
-- `MIN_AREA`: Minimum area in m² (default: `100`)
-
-### Timing
-- `FUNDA_SLEEP`: Sleep after Funda scrape in seconds (default: `3600`)
-- `PARARIUS_SLEEP`: Sleep after Pararius scrape in seconds (default: `1800`)
-- `JAAP_SLEEP`: Sleep after Jaap scrape in seconds (default: `3600`)
-
-### Kanboard Integration
-- `KANBAN_URL`: Kanboard API endpoint (default: `http://kanboard/jsonrpc.php`)
-- `KANBAN_USERNAME`: Kanboard username (default: `admin`)
-- `KANBAN_PASSWORD`: Kanboard password (default: `admin`)
-- `KANBAN_PROJECT_ID`: Project ID (default: `1`)
-- `KANBAN_OWNER_ID`: Owner ID (default: `1`)
-- `KANBAN_CREATOR_ID`: Creator ID (default: `1`)
-
-## Commands
-
-The `copy_funda_scraper_files.sh` script supports these commands:
-
-- `build` - Build the Docker image
-- `run` - Start the scraper service and Kanboard
-- `stop` - Stop the scraper service and Kanboard
-- `logs` - Show scraper logs
-- `test` - Run unit tests
-- `shell` - Open shell in running container
-- `health` - Check scraper health
-- `kanboard` - Open Kanboard in browser
-- `kanboard-logs` - Show Kanboard logs
-- `status` - Show status of all services
-
-## Architecture
-
-### System Overview
+Woningradar controleert elk uur of er nieuwe koopwoningen zijn bijgekomen die
+passen bij jouw zoekopdracht. Elke nieuwe woning komt als kaartje op een
+Kanban-bord (Kanboard) te staan, zodat je ze rustig kunt doorlopen:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              Docker Compose Stack                               │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  ┌─────────────────────────┐              ┌─────────────────────────┐          │
-│  │   Concurrent Scraper    │              │       Kanboard          │          │
-│  │    (Port: 8000)         │─────────────▶│     (Port: 8080)        │          │
-│  │                         │   JSON-RPC   │                         │          │
-│  │ ┌─────────────────────┐ │   API Calls  │ ┌─────────────────────┐ │          │
-│  │ │  Scraper Manager    │ │              │ │   Web Interface     │ │          │
-│  │ │  - Coordinates      │ │              │ │   - Task Management │ │          │
-│  │ │  - Monitors         │ │              │ │   - Project Boards  │ │          │
-│  │ │  - Restarts         │ │              │ │   - User Interface  │ │          │
-│  │ └─────────────────────┘ │              │ └─────────────────────┘ │          │
-│  │           │             │              │                         │          │
-│  │           ▼             │              │ ┌─────────────────────┐ │          │
-│  │ ┌─────────────────────┐ │              │ │   SQLite Database   │ │          │
-│  │ │  Worker Threads     │ │              │ │   - Projects        │ │          │
-│  │ │                     │ │              │ │   - Tasks           │ │          │
-│  │ │ ┌─────────────────┐ │ │              │ │   - Users           │ │          │
-│  │ │ │ Funda Worker    │ │ │              │ │   - Configurations  │ │          │
-│  │ │ │ Thread (1h)     │ │ │              │ └─────────────────────┘ │          │
-│  │ │ └─────────────────┘ │ │              │                         │          │
-│  │ │        ║            │ │              │                         │          │
-│  │ │ ┌─────────────────┐ │ │              │                         │          │
-│  │ │ │ Pararius Worker │ │ │              │                         │          │
-│  │ │ │ Thread (30m)    │ │ │              │                         │          │
-│  │ │ └─────────────────┘ │ │              │                         │          │
-│  │ │        ║            │ │              │                         │          │
-│  │ │ ┌─────────────────┐ │ │              │                         │          │
-│  │ │ │ Jaap Worker     │ │ │              │                         │          │
-│  │ │ │ Thread (1h)     │ │ │              │                         │          │
-│  │ │ └─────────────────┘ │ │              │                         │          │
-│  │ └─────────────────────┘ │              │                         │          │
-│  │           │             │              │                         │          │
-│  │           ▼             │              │                         │          │
-│  │ ┌─────────────────────┐ │              │                         │          │
-│  │ │  Monitor Thread     │ │              │                         │          │
-│  │ │  - Health Checks    │ │              │                         │          │
-│  │ │  - Auto Restart     │ │              │                         │          │
-│  │ │  - Statistics       │ │              │                         │          │
-│  │ └─────────────────────┘ │              │                         │          │
-│  │           │             │              │                         │          │
-│  │           ▼             │              │                         │          │
-│  │ ┌─────────────────────┐ │              │                         │          │
-│  │ │  Enhanced Health    │ │              │                         │          │
-│  │ │  Server             │ │              │                         │          │
-│  │ │  - /health          │ │              │                         │          │
-│  │ │  - /status          │ │              │                         │          │
-│  │ │  - /workers         │ │              │                         │          │
-│  │ └─────────────────────┘ │              │                         │          │
-│  └─────────────────────────┘              └─────────────────────────┘          │
-│                                                                                 │
-│  ┌─────────────────────────┐              ┌─────────────────────────┐          │
-│  │    Persistent Storage   │              │    Persistent Storage   │          │
-│  │    - Application Logs   │              │    - Kanboard Data      │          │
-│  │    - Worker Statistics  │              │    - Project Files      │          │
-│  │    - Error Tracking     │              │    - User Preferences   │          │
-│  └─────────────────────────┘              └─────────────────────────┘          │
-└─────────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-                              External Websites
-                         ┌─────────────────────────┐
-                         │      Funda.nl           │
-                         │      Jaap.nl            │
-                         │      Pararius.nl        │
-                         └─────────────────────────┘
+Nieuw binnen  →  In beoordeling  →  Interessant  /  Niet interessant
 ```
 
-### Data Flow
+Woningen die al op het bord staan worden niet nogmaals toegevoegd, dus je ziet
+alleen wat echt nieuw is.
 
-1. **Concurrent Scraping Architecture**:
-   ```
-   Main Manager → ScraperWorker (Funda)   → HTTP Request → Funda.nl
-                ↓                           ↓
-                ScraperWorker (Pararius) → HTTP Request → Pararius.nl
-                ↓                           ↓
-                ScraperWorker (Jaap)    → HTTP Request → Jaap.nl
-                ↓
-                Monitor Thread (Health Check & Restart)
-   ```
+**Wat je nodig hebt:** een computer of server die aan blijft staan, met
+[Docker](https://docs.docker.com/get-docker/) en Docker Compose erop.
 
-2. **Individual Worker Flow**:
-   ```
-   Worker Thread → Scraper Instance → HTTP Request → Website
-                        ↓
-   Parse HTML → Extract Listings → Check Kanboard for Duplicates
-                        ↓
-   Create New Tasks → Kanboard API → SQLite Database
-                        ↓
-   Update Stats → Log Results → Sleep (Configurable) → Repeat
-   ```
+## Snel starten
 
-3. **Task Management Flow**:
-   ```
-   New Property Found → Create Kanboard Task → "New Listings" Column
-                              ↓
-   User Reviews → Move to "Under Review" → Decision Making
-                              ↓
-   User Decision → "Interested" or "Not Interested" Column
-   ```
+### 1. Download het project
 
-4. **Health Monitoring Flow**:
-   ```
-   Health Server → Manager Status → Worker Status → Individual Stats
-                        ↓
-   HTTP Endpoints → /health, /status, /workers → JSON Response
-   ```
-
-### Core Components
-
-- **`config.py`**: Configuration management with environment variables
-- **`base_scraper.py`**: Base class with common functionality (HTTP requests, Kanban integration)
-- **`funda.py`**: Funda.nl scraper implementation
-- **`jaap.py`**: Jaap.nl scraper implementation  
-- **`pararius.py`**: Pararius.nl scraper implementation
-- **`main.py`**: Main runner that orchestrates all scrapers
-- **`health.py`**: Health check HTTP server
-- **`test_scrapers.py`**: Comprehensive unit tests
-
-### Service Communication
-
-- **Scraper ↔ Kanboard**: JSON-RPC API calls over HTTP
-- **User ↔ Kanboard**: Web interface on port 8080
-- **Monitoring ↔ Scraper**: Health check endpoint on port 8000
-- **Scrapers ↔ Websites**: HTTP requests with retry logic and random user agents
-
-### Improvements Over Original
-
-1. **Better Structure**: Object-oriented design with inheritance
-2. **Error Handling**: Retry logic, timeouts, graceful failures
-3. **Logging**: Structured logging to files and console
-4. **Configuration**: Environment-based configuration
-5. **Testing**: Unit tests with mocking
-6. **Health Monitoring**: HTTP health check endpoint
-7. **Documentation**: Comprehensive README and code comments
-8. **Deployment**: Docker Compose for easy deployment
-
-## Development
-
-### Running Tests
 ```bash
-./copy_funda_scraper_files.sh test
+git clone https://github.com/jeroen-nijssen/funda_scraper.git
+cd funda_scraper
 ```
 
-### Local Development
+### 2. Stel je zoekopdracht in
+
+Maak een `.env`-bestand aan op basis van het voorbeeld:
+
 ```bash
-# Install dependencies
-pip install -r app/requirements.txt
-
-# Run individual scrapers
-cd app
-python funda.py
-python jaap.py
-python pararius.py
-
-# Run all scrapers
-python main.py
+cp .env.example .env
 ```
 
-### Debugging
+Open `.env` en pas je zoekcriteria aan. Voor Amsterdam, maximaal 5 km eromheen,
+tot € 450.000:
+
+```ini
+LOCATION=gemeente-amsterdam
+DISTANCE=5
+MAX_PRICE=450000
+MIN_ROOMS=5
+MIN_AREA=100
+```
+
+### 3. Start alles op
+
 ```bash
-# Open shell in running container
-./copy_funda_scraper_files.sh shell
-
-# Check logs
-./copy_funda_scraper_files.sh logs
+./woningradar.sh run
 ```
 
-## Monitoring
+Dit doet in één keer:
 
-### Health Endpoints
-- **Basic Health Check**: `http://localhost:8000/health` - Simple health status
-- **Detailed Status**: `http://localhost:8000/status` - Complete system status with worker details
-- **Worker Statistics**: `http://localhost:8000/workers` - Individual worker performance metrics
+1. Kanboard starten
+2. Wachten tot Kanboard klaar is
+3. Het project **Property Listings** en de vier kolommen aanmaken
+4. De scraper starten
 
-### Web Interfaces
-- **Kanboard Interface**: `http://localhost:8080` (admin/admin) - Task management
-- **Logs**: Available in `./logs/` directory - Persistent log files
+Je hoeft dus niets handmatig in te richten.
 
-### Monitoring Commands
-- **Overall Status**: `./copy_funda_scraper_files.sh status` - Docker services + health checks
-- **Worker Details**: `curl http://localhost:8000/workers` - Individual worker statistics
-- **Live Logs**: `./copy_funda_scraper_files.sh logs` - Real-time log streaming
+### 4. Zet het juiste project-ID in `.env`
 
-### Health Check Features
-- **Automatic Worker Restart**: Failed workers are automatically restarted
-- **Performance Metrics**: Track runs, errors, and success rates per worker
-- **Concurrent Monitoring**: All scrapers run simultaneously with independent schedules
-- **Docker Health Checks**: Built-in container health monitoring
+Bij stap 3 wordt een project-ID getoond, bijvoorbeeld:
 
-## Troubleshooting
+```
+Project ID   : 1
+Set KANBAN_PROJECT_ID=1 in your .env file so the
+scraper writes listings to this project.
+```
 
-### Common Issues
+Staat daar een ander nummer dan `1`? Zet dat nummer dan in `.env` als
+`KANBAN_PROJECT_ID` en herstart met `./woningradar.sh stop` en
+`./woningradar.sh run`. Anders komen de woningen op het verkeerde bord terecht.
 
-1. **Network errors**: The scraper includes retry logic for temporary network issues
-2. **Rate limiting**: Random user agents and delays help avoid rate limiting
-3. **HTML changes**: If scrapers stop working, the site HTML structure may have changed
-4. **Kanban errors**: Check your Kanban credentials and API endpoint
+Het ID zien als je het gemist hebt:
 
-### Logs Location
-- Container logs: `./logs/scraper.log`
-- Docker logs: `docker-compose logs`
+```bash
+./woningradar.sh logs
+```
 
-## Security Notes
+### 5. Bekijk je bord
 
-- Kanban credentials are stored in environment variables
-- Use proper authentication tokens
-- Consider using Docker secrets for production deployments
+Ga naar **http://localhost:8080** en log in met `admin` / `admin`.
+
+> [!CAUTION]
+> Wijzig dit wachtwoord direct, en zet poort 8080 nooit open op internet. Zie
+> [SECURITY.md](SECURITY.md).
+
+De eerste woningen verschijnen binnen een uur. Er staat pas iets op het bord
+zodra er daadwerkelijk een *nieuwe* woning is gevonden.
+
+## Dagelijks gebruik
+
+| Commando | Wat het doet |
+| --- | --- |
+| `./woningradar.sh run` | Alles starten |
+| `./woningradar.sh stop` | Alles stoppen |
+| `./woningradar.sh status` | Draait alles nog? Inclusief statistieken per site |
+| `./woningradar.sh logs` | Live meekijken wat er gebeurt |
+| `./woningradar.sh health` | Snelle controle of de scraper leeft |
+| `./woningradar.sh kanboard` | Kanboard openen in je browser |
+| `./woningradar.sh setup` | Bord opnieuw inrichten (veilig, verwijdert niets) |
+| `./woningradar.sh build` | Docker-image opnieuw bouwen na een update |
+
+Voor ontwikkelaars zijn er ook `test`, `lint`, `shell`, `workers`,
+`detailed-status` en `kanboard-logs`. Zie `./woningradar.sh` zonder argument.
+
+## Zoekopdracht instellen
+
+Alle instellingen staan in `.env`.
+
+### Waar en wat je zoekt
+
+| Instelling | Betekenis | Standaard |
+| --- | --- | --- |
+| `LOCATION` | Gemeente, met `gemeente-` ervoor | `gemeente-amsterdam` |
+| `DISTANCE` | Zoekstraal in kilometers | `5` |
+| `MAX_PRICE` | Maximale vraagprijs in euro's | `450000` |
+| `MIN_ROOMS` | Minimaal aantal kamers | `5` |
+| `MIN_AREA` | Minimale woonoppervlakte in m² | `100` |
+
+### Hoe vaak er gekeken wordt
+
+| Instelling | Betekenis | Standaard |
+| --- | --- | --- |
+| `FUNDA_SLEEP` | Wachttijd na Funda, in seconden | `3600` (1 uur) |
+| `PARARIUS_SLEEP` | Wachttijd na Pararius, in seconden | `1800` (30 min) |
+| `HUISPEDIA_SLEEP` | Wachttijd na Huispedia, in seconden | `3600` (1 uur) |
+
+> [!WARNING]
+> **Verlaag deze waarden niet.** Vaker opvragen levert je geen woningen extra op
+> — het aanbod verandert niet per minuut — maar belast de sites wel en vergroot
+> de kans dat je IP-adres wordt geblokkeerd. Zie de [disclaimer](DISCLAIMER.md).
+
+### Kanboard-instellingen
+
+| Instelling | Betekenis | Standaard |
+| --- | --- | --- |
+| `KANBAN_PROJECT_ID` | Op welk project de woningen komen | `1` |
+| `KANBAN_USERNAME` | Gebruikersnaam | `admin` |
+| `KANBAN_PASSWORD` | Wachtwoord — **wijzig dit** | `admin` |
+| `KANBAN_BASE_URL` | Adres van Kanboard binnen Docker | `http://kanboard` |
+| `KANBAN_URL` | JSON-RPC-adres van Kanboard | `http://kanboard/jsonrpc.php` |
+| `KANBAN_PROJECT_NAME` | Naam van het aan te maken project | `Property Listings` |
+| `KANBAN_OWNER_ID` | Wie de kaartjes toegewezen krijgt | `1` |
+| `KANBAN_CREATOR_ID` | Wie als aanmaker geldt | `1` |
+
+Draai je `setup_kanboard.py` los van Docker, zet dan
+`KANBAN_BASE_URL=http://localhost:8080`.
+
+## Problemen oplossen
+
+### Er komen geen woningen op het bord
+
+Meestal is er simpelweg niets nieuws. Controleer eerst of de scraper draait en
+of er fouten zijn:
+
+```bash
+./woningradar.sh status
+```
+
+Zie je `runs` oplopen en `errors` op 0 staan, dan werkt alles. Loop daarna na:
+
+- **Is je zoekopdracht te streng?** Probeer `MAX_PRICE` te verhogen of
+  `MIN_ROOMS` en `MIN_AREA` te verlagen.
+- **Staat `KANBAN_PROJECT_ID` goed?** Zie [stap 4](#4-zet-het-juiste-project-id-in-env).
+  Dit is de meest voorkomende oorzaak.
+### Funda vindt niets
+
+Funda.nl blokkeert geautomatiseerde requests met een bot-check op CDN-niveau.
+De Funda-scraper rendert pagina's daarom met een headless browser (Playwright)
+om dit te omzeilen, maar dit is **best-effort en niet gegarandeerd te werken**
+— in tests leverde dit nog steeds de bot-check-pagina op in plaats van echte
+resultaten. Het kan zijn dat dit vanaf jouw netwerk wel werkt. Zie dit niet als
+een bevestigde fix.
+
+### Eén site vindt plotseling niets meer
+
+Dan heeft die site zijn website verbouwd. Woningradar leest de HTML van de
+zoekpagina's, en zodra de opbouw daarvan verandert, herkent hij de woningen niet
+meer. Dit hoort bij scrapen zonder API.
+
+De andere sites blijven gewoon werken. Meld het via een
+[issue](https://github.com/jeroen-nijssen/funda_scraper/issues/new/choose) —
+kies **Scraper broken**.
+
+### Foutmeldingen in de logs
+
+```bash
+./woningradar.sh logs
+```
+
+- `No listings found` — geen resultaten, of de HTML is gewijzigd (zie hierboven).
+- `Request attempt 1 failed` — tijdelijke netwerkfout. Er wordt automatisch
+  opnieuw geprobeerd; incidenteel is dit normaal.
+- `Error creating Kanban task` — controleer `KANBAN_PASSWORD` en
+  `KANBAN_PROJECT_ID` in `.env`.
+- Blijft het misgaan bij álle sites? Dan kan je IP-adres geblokkeerd zijn. Zet
+  het even uit en verlaag de frequentie niet.
+
+Logbestanden staan in de map `logs/`.
+
+### Opnieuw beginnen
+
+```bash
+./woningradar.sh stop
+./woningradar.sh run
+```
+
+Je bord en kaartjes blijven bewaard. `./woningradar.sh setup` opnieuw uitvoeren
+is veilig: bestaande kolommen en kaartjes worden nooit verwijderd.
+
+## Hoe het werkt
+
+```
+                  ┌──────────────────────────────┐
+                  │  Woningradar (poort 8000)    │
+                  │                              │
+   Funda.nl  ◀────┤  Funda-worker      elk uur   │
+Pararius.nl  ◀────┤  Pararius-worker   elk 30m   │──┐
+Huispedia.nl ◀────┤  Huispedia-worker  elk uur   │  │
+                  │                              │  │ JSON-RPC
+                  │  Monitor + /health /status   │  │
+                  └──────────────────────────────┘  │
+                                                    ▼
+                                    ┌──────────────────────────────┐
+                                    │  Kanboard (poort 8080)       │
+                                    │  Nieuw → Beoordeling →       │
+                                    │  Interessant / Niet          │
+                                    └──────────────────────────────┘
+```
+
+Elke site heeft zijn eigen worker met zijn eigen tempo. Valt één worker uit, dan
+blijven de andere doorwerken en wordt de uitvaller automatisch herstart. Voor elke
+gevonden woning wordt eerst op het bord gecontroleerd of die er al staat.
+
+## Meedoen en ontwikkelen
+
+Ontwikkeling gebeurt in het Engels; alleen deze gebruikersdocumentatie is in het
+Nederlands. Zie:
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — opzetten, tests, een site toevoegen
+- **[DISCLAIMER.md](DISCLAIMER.md)** — voorwaarden en verantwoord gebruik
+- **[SECURITY.md](SECURITY.md)** — kwetsbaarheden melden, veilig inrichten
+- **[CHANGELOG.md](CHANGELOG.md)** — wat er per versie is gewijzigd
+
+Snelle start voor ontwikkelaars:
+
+```bash
+pip install -r requirements-dev.txt
+pytest          # vanuit de hoofdmap van het project
+ruff check .
+```
+
+## Licentie
+
+[Apache 2.0](LICENSE). Geleverd zonder garantie; zie de
+[disclaimer](DISCLAIMER.md).

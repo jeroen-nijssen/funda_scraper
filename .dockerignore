@@ -1,0 +1,75 @@
+# Keep the build context small and keep secrets out of the image.
+#
+# The Dockerfile needs:
+#   - app/requirements.txt
+#   - app/
+#   - setup_kanboard.py (root)
+# Everything below is deliberately NOT one of those.
+
+# --- Secrets -----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Version control ---------------------------------------------------------
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- Python caches and artifacts --------------------------------------------
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+.venv
+venv
+env
+ENV
+*.egg-info
+build
+dist
+.eggs
+
+# --- Test / lint caches (tests are not run inside the runtime image) ---------
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+.coverage.*
+coverage.xml
+htmlcov
+.tox
+.nox
+.hypothesis
+requirements-dev.txt
+app/test_*.py
+**/test_*.py
+**/*_test.py
+conftest.py
+
+# --- Docs and project meta ---------------------------------------------------
+*.md
+docs
+assets
+LICENSE
+
+# --- Compose / tooling not needed at build time ------------------------------
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+.dockerignore
+woningradar.sh
+copy_funda_scraper_files.sh
+
+# --- Editors and OS cruft ----------------------------------------------------
+.vscode
+.idea
+.editorconfig
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- Runtime output (bind-mounted at run time, never baked in) ---------------
+logs
+log
+*.log

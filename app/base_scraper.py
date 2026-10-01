@@ -1,33 +1,41 @@
 """Base scraper class with common functionality."""
-import json
 import logging
 import random
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
 import requests
 from bs4 import BeautifulSoup
-
 from config import Config
+from playwright.sync_api import sync_playwright
 
 
 class BaseScraper(ABC):
     """Base class for all property scrapers."""
-    
+
     def __init__(self, config: Config, logger: logging.Logger):
         self.config = config
         self.logger = logger
         self.session = requests.Session()
-        
-    def get_headers(self) -> Dict[str, str]:
-        """Get random user agent headers."""
+
+    def get_headers(self) -> dict[str, str]:
+        """Get request headers with a random user agent.
+
+        Pararius (and likely the others) reject requests that only carry a
+        User-Agent: a plain browser-like navigation header set is needed to
+        pass their bot filter.
+        """
         return {
-            'User-Agent': random.choice(self.config.user_agents)
+            'User-Agent': random.choice(self.config.user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'nl-NL,nl;q=0.9,en;q=0.8',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Dest': 'document',
+            'Upgrade-Insecure-Requests': '1',
         }
-    
-    def make_request(self, url: str, max_retries: int = 3) -> Optional[requests.Response]:
+
+    def make_request(self, url: str, max_retries: int = 3) -> requests.Response | None:
         """Make HTTP request with retry logic."""
         for attempt in range(max_retries):
             try:
@@ -41,8 +49,30 @@ class BaseScraper(ABC):
                 else:
                     self.logger.error(f"All request attempts failed for {url}")
                     return None
-    
-    def check_existing_task(self, title: str) -> Tuple[bool, str]:
+
+    def render_with_browser(self, url: str) -> str | None:
+        """Fetch a page's HTML by rendering it with headless Chromium.
+
+        Used by scrapers whose target site blocks plain HTTP clients but may
+        accept a real browser (see FundaScraper). Returns None on failure,
+        matching make_request's failure convention.
+        """
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page(
+                    user_agent=random.choice(self.config.user_agents),
+                    locale='nl-NL',
+                )
+                page.goto(url, wait_until='load', timeout=30000)
+                content = page.content()
+                browser.close()
+                return content
+        except Exception as e:
+            self.logger.error(f"Browser rendering failed for {url}: {e}")
+            return None
+
+    def check_existing_task(self, title: str) -> tuple[bool, str]:
         """Check if task already exists in Kanban board."""
         try:
             body = {
@@ -54,14 +84,14 @@ class BaseScraper(ABC):
                     "status_id": 1
                 }
             }
-            
+
             headers = {
                 'Content-Type': 'application/json'
             }
-            
+
             # Use username/password authentication
             auth = (self.config.kanban_config.username, self.config.kanban_config.password)
-            
+
             response = self.session.post(
                 self.config.kanban_config.base_url,
                 headers=headers,
@@ -69,19 +99,19 @@ class BaseScraper(ABC):
                 auth=auth,
                 timeout=30
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 for task in data.get('result', []):
                     if task.get('title') == title:
                         return True, task.get('url', 'not existing')
-                        
+
             return False, 'not existing'
-            
+
         except Exception as e:
             self.logger.error(f"Error checking existing task: {e}")
             return False, 'not existing'
-    
+
     def create_kanban_task(self, title: str, description: str) -> bool:
         """Create new task in Kanban board."""
         try:
@@ -96,14 +126,14 @@ class BaseScraper(ABC):
                     "project_id": self.config.kanban_config.project_id
                 }
             }
-            
+
             headers = {
                 'Content-Type': 'application/json'
             }
-            
+
             # Use username/password authentication
             auth = (self.config.kanban_config.username, self.config.kanban_config.password)
-            
+
             response = self.session.post(
                 self.config.kanban_config.base_url,
                 headers=headers,
@@ -111,27 +141,27 @@ class BaseScraper(ABC):
                 auth=auth,
                 timeout=30
             )
-            
+
             return response.status_code == 200
-            
+
         except Exception as e:
             self.logger.error(f"Error creating Kanban task: {e}")
             return False
-    
+
     def process_listing(self, street: str, city: str, price: str, url: str) -> None:
         """Process a single listing."""
         title = f"{street} - {city}"
         description = f"{street} - {city}\n\n{price}\n\n\n{url}"
-        
+
         exists, existing_url = self.check_existing_task(title)
-        
+
         if not exists:
             self.logger.info(f"Found new listing on {self.get_site_name()}")
             self.logger.info(f"\t{street}")
             self.logger.info(f"\t{city}")
             self.logger.info(f"\t{price}")
             self.logger.info(f"\t{url}")
-            
+
             if self.create_kanban_task(title, description):
                 self.logger.info("Successfully created Kanban task")
             else:
@@ -139,45 +169,45 @@ class BaseScraper(ABC):
         else:
             self.logger.info(f"Found existing listing on {self.get_site_name()}")
             self.logger.info(f"\tListing already on the board, URL: {existing_url}")
-    
+
     @abstractmethod
     def get_site_name(self) -> str:
         """Get the name of the site being scraped."""
         pass
-    
+
     @abstractmethod
     def build_url(self) -> str:
         """Build the search URL for the site."""
         pass
-    
+
     @abstractmethod
-    def parse_listings(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def parse_listings(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Parse listings from the soup object."""
         pass
-    
+
     def scrape(self) -> None:
         """Main scraping method."""
         now = datetime.now()
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-        
+
         self.logger.info("##################################")
         self.logger.info(f"Execution running at: {dt_string}")
-        
+
         url = self.build_url()
         self.logger.info(f"Requesting data from: {url}")
-        
+
         response = self.make_request(url)
         if not response:
             self.logger.error("Failed to fetch data")
             return
-        
+
         soup = BeautifulSoup(response.content, "html.parser")
         listings = self.parse_listings(soup)
-        
+
         if not listings:
             self.logger.warning("No listings found")
             return
-        
+
         for listing in listings:
             try:
                 self.process_listing(
@@ -189,5 +219,5 @@ class BaseScraper(ABC):
             except Exception as e:
                 self.logger.error(f"Error processing listing: {e}")
                 continue
-        
+
         self.logger.info("##################################")
