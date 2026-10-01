@@ -1,0 +1,17 @@
+# Tooling configuration only. Runtime dependencies live in app/requirements.txt
+# and development dependencies in requirements-dev.txt.
+[tool.pytest.ini_options]
+# The application uses flat imports (`from config import Config`), so app/ must
+# be on sys.path for a bare `pytest` from the repository root to work.
+pythonpath = ["app"]
+testpaths = ["app"]
+addopts = "-ra"
+
+[tool.ruff]
+# The existing code base was not written to an 88-column limit; 120 keeps the
+# current formatting legal without a sweeping reformat.
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]

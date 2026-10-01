@@ -1,0 +1,233 @@
+# CI - validation pipeline for Woningradar.
+# Fires on every pull request targeting main, on pushes to main, and manually
+# via workflow_dispatch. Gates on: ruff lint, pytest (3.11 + 3.12), bandit,
+# a non-pushed Docker image build + health smoke test, and compose validation.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_DEFAULT: "3.11"
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_DEFAULT }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT }}
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            app/requirements.txt
+
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Ruff check
+        run: ruff check .
+
+      # The existing code base predates ruff format, so reformatting everything
+      # would create a huge unrelated diff. We still run the check so formatting
+      # drift stays visible in the logs, but it must not block the pipeline.
+      - name: Ruff format check (non-blocking)
+        continue-on-error: true
+        run: ruff format --check .
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            app/requirements.txt
+
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      # pytest configuration lives in the root pyproject.toml
+      # ([tool.pytest.ini_options] with pythonpath = ["app"], testpaths = ["app"]),
+      # so a bare `pytest` from the repository root is all that is needed.
+      - name: Run pytest with coverage
+        run: pytest --cov=app --cov-report=xml --cov-report=term
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml-py${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_DEFAULT }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT }}
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            app/requirements.txt
+
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      # -ll reports MEDIUM severity and above. Without it bandit trips over the
+      # low-severity findings that are inherent to this project (the documented
+      # default 'admin' Kanboard credentials and the outbound requests calls),
+      # which would leave this job permanently red and therefore meaningless.
+      - name: Bandit static analysis
+        run: bandit -ll -r app setup_kanboard.py
+
+      - name: Audit dependencies for known vulnerabilities (non-blocking)
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit -r app/requirements.txt -r requirements-dev.txt
+
+  docker-build:
+    name: Docker build and smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: woningradar:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The default CMD (python main.py) immediately spawns the funda, pararius
+      # and huispedia workers, which fire real outbound HTTP requests at third-party
+      # sites. That is both unfriendly and flaky in CI, so we override the
+      # command to start ONLY the health server from health.py. This still
+      # proves the image is correct end to end: the Python interpreter, the
+      # installed dependencies, the copied application code and the HTTP
+      # listener on port 8000 all have to work. Passing no scraper manager is
+      # supported by start_health_server(), and /health returns 200 in that
+      # case. The very high *_SLEEP values are belt and braces in case anything
+      # else ever schedules work at import time.
+      - name: Start container with health server only
+        run: |
+          docker run -d --name woningradar-smoke \
+            -p 8000:8000 \
+            -e FUNDA_SLEEP=86400 \
+            -e PARARIUS_SLEEP=86400 \
+            -e HUISPEDIA_SLEEP=86400 \
+            woningradar:ci \
+            python -c "import time; from health import start_health_server; start_health_server(); print('health server up', flush=True); time.sleep(300)"
+
+      - name: Wait for the health endpoint to respond
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health > /tmp/health.json; then
+              echo "Health endpoint responded after ${attempt} attempt(s):"
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Health endpoint did not respond within 60 seconds"
+          docker logs woningradar-smoke || true
+          exit 1
+
+      - name: Assert health payload reports healthy
+        run: |
+          python -c "import json,sys; d=json.load(open('/tmp/health.json')); print(d); sys.exit(0 if d.get('status')=='healthy' else 1)"
+
+      # /status and /workers correctly answer 503 when no scraper manager is
+      # attached, so we only assert that they are routed (i.e. not a 404).
+      - name: Assert /status and /workers are routed
+        run: |
+          for endpoint in status workers; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8000/${endpoint}")
+            echo "/${endpoint} -> HTTP ${code}"
+            if [ "${code}" = "404" ]; then
+              echo "::error::/${endpoint} is not routed by the health server"
+              exit 1
+            fi
+          done
+
+      - name: Show container logs
+        if: always()
+        run: docker logs woningradar-smoke || true
+
+      - name: Tear down container
+        if: always()
+        run: docker rm -f woningradar-smoke || true
+
+  compose-validate:
+    name: Validate docker-compose.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # docker-compose.yml declares `env_file: .env`, which must exist for
+      # `docker compose config` to succeed. .env is git-ignored, so seed it
+      # from the committed example.
+      - name: Seed .env from .env.example
+        run: |
+          if [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+
+      - name: Validate compose configuration
+        run: docker compose config --quiet

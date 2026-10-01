@@ -1,0 +1,134 @@
+# ---------------------------------------------------------------------------
+# Secrets and local configuration
+# ---------------------------------------------------------------------------
+# The real secrets file. NEVER commit this.
+.env
+.env.*
+.env.local
+.env.*.local
+# ... but the template MUST stay tracked.
+!.env.example
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.virtualenv/
+pyvenv.cfg
+
+# Packaging / build artifacts
+build/
+dist/
+sdist/
+wheels/
+develop-eggs/
+eggs/
+.eggs/
+*.egg
+*.egg-info/
+MANIFEST
+pip-wheel-metadata/
+share/python-wheels/
+*.manifest
+*.spec
+
+# Installer / pip logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ---------------------------------------------------------------------------
+# Testing, coverage and linting caches
+# ---------------------------------------------------------------------------
+.pytest_cache/
+.cache/
+.tox/
+.nox/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+nosetests.xml
+junit.xml
+report.xml
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# ---------------------------------------------------------------------------
+# Runtime output
+# ---------------------------------------------------------------------------
+# docker-compose bind-mounts ./logs into the scraper container (/app/log).
+logs/
+log/
+*.log
+
+# Local SQLite / Kanboard scratch data (volumes are named, but just in case)
+*.sqlite
+*.sqlite3
+*.db
+
+# ---------------------------------------------------------------------------
+# Editors and IDEs
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+.spyderproject
+.spyproject
+.ropeproject
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# OS cruft (Windows + OneDrive, macOS, Linux)
+# ---------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+# OneDrive conflict copies, e.g. "config-DESKTOP-ABC123.py"
+*-Conflict.*
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.fuse_hidden*
+.nfs*
+
+# ---------------------------------------------------------------------------
+# Jupyter / notebooks (occasionally used for selector spelunking)
+# ---------------------------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ---------------------------------------------------------------------------
+# Scratch HTML dumps used when debugging broken CSS selectors
+# ---------------------------------------------------------------------------
+/scratch/
+/tmp/
+*.html.dump

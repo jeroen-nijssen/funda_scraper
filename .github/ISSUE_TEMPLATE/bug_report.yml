@@ -1,0 +1,153 @@
+name: Bug report
+description: Something in Woningradar does not work as documented.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+
+        **Is a scraper returning zero listings while the site itself shows results?**
+        That is almost always a site layout change, not a bug in the plumbing —
+        please use the *Scraper broken / site layout changed* template instead.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checks
+      options:
+        - label: I have searched the existing open and closed issues and this is not a duplicate.
+          required: true
+        - label: I am running a supported configuration (Docker Compose, or Python 3.11+ directly).
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the actual behaviour you observed.
+      placeholder: The scraper container exits immediately after start with a traceback.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, ordered steps that reliably trigger the problem.
+      value: |
+        1. Set `...` in `.env`
+        2. Run `docker compose up -d`
+        3. Observe `docker compose logs funda-scraper`
+        4. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component(s)
+      description: Select everything that applies.
+      multiple: true
+      options:
+        - Funda scraper (app/funda.py)
+        - Huispedia scraper (app/huispedia.py)
+        - Pararius scraper (app/pararius.py)
+        - Kanboard integration (task creation / duplicate detection)
+        - Docker / Docker Compose
+        - Configuration (.env, app/config.py)
+        - Health endpoint (app/health.py)
+        - Operator CLI (woningradar.sh)
+        - Tests / CI
+        - Documentation
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How are you running Woningradar?
+      options:
+        - Docker Compose (scraper + Kanboard, as shipped)
+        - Docker Compose with an external/existing Kanboard
+        - Plain Docker container
+        - Directly with Python (no container)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release tag (e.g. `v1.2.0`), image tag, or `git rev-parse --short HEAD`.
+      placeholder: v1.2.0 / 86940d7
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Host OS and Docker version
+      description: Output of `docker --version` plus your OS.
+      placeholder: Ubuntu 24.04, Docker 27.3.1 / Windows 11, Docker Desktop 4.34
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        Paste the relevant part of `docker compose logs funda-scraper` or `logs/scraper.log`.
+        Redact anything sensitive first.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: |
+        The non-secret parts of your `.env` (search criteria, sleep intervals).
+        **Never paste `KANBAN_PASSWORD` or any other credential.**
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, workarounds you found, related issues.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Data hygiene
+      options:
+        - label: I confirm this report contains no passwords, API tokens, session cookies, or other secrets.
+          required: true
+        - label: I confirm this report contains no personal data of third parties (names, phone numbers, e-mail addresses of sellers or agents).
+          required: true
+
+  - type: checkboxes
+    id: conduct
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](../blob/main/CODE_OF_CONDUCT.md).
+          required: true

@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" role="img" aria-labelledby="wr-banner-title">
+  <title id="wr-banner-title">Woningradar - Nieuwe woningen op je radar</title>
+  <g transform="translate(377.64 83.00) scale(1.6)">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M24.72 30.71 A9.00 9.00 0 0 1 39.28 30.71" stroke="#CC6A10" stroke-width="4.5"/>
+      <path d="M18.25 26.01 A17.00 17.00 0 0 1 45.75 26.01" stroke="#4A6E8F" stroke-width="4.5"/>
+      <path d="M11.77 21.31 A25.00 25.00 0 0 1 52.23 21.31" stroke="#4A6E8F" stroke-width="4.5"/>
+      <path d="M12.00 52.00 L32.00 36.00 L52.00 52.00" stroke="#4A6E8F" stroke-width="5.5"/>
+    </g>
+  </g>
+  <g transform="translate(502.44 111.80) scale(3.2000)"
+     fill="none" stroke="#4A6E8F" stroke-width="2.0"
+     stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(0.00 0)">
+      <path d="M1 0L4 14L7.5 3.5L11 14L14 0"/>
+    </g>
+    <g transform="translate(16.10 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+    </g>
+    <g transform="translate(27.70 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.5 4Q8 4 8 6.9V14"/>
+    </g>
+    <g transform="translate(39.30 0)">
+      <path d="M1 4V14"/>
+      <circle cx="1" cy="1.2" r="1"/>
+    </g>
+    <g transform="translate(43.90 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.5 4Q8 4 8 6.9V14"/>
+    </g>
+    <g transform="translate(55.50 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 4V16Q8 18.2 5 18.2Q2.6 18.2 1.9 17"/>
+    </g>
+    <g transform="translate(67.10 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.9 4"/>
+    </g>
+    <g transform="translate(75.70 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 4V14"/>
+    </g>
+    <g transform="translate(87.30 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 0V14"/>
+    </g>
+    <g transform="translate(98.90 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 4V14"/>
+    </g>
+    <g transform="translate(110.50 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.9 4"/>
+    </g>
+  </g>
+  <g transform="translate(502.44 216.70) scale(1.4500)"
+     fill="none" stroke="#6B8299" stroke-width="1.9"
+     stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(0.00 0)">
+      <path d="M1 14V0L8 14V0"/>
+    </g>
+    <g transform="translate(11.60 0)">
+      <path d="M1 4V14"/>
+      <circle cx="1" cy="1.2" r="1"/>
+    </g>
+    <g transform="translate(16.20 0)">
+      <path d="M1.3 9.2H7.9Q7.9 4 4.5 4Q1 4 1 9Q1 14 4.6 14Q6.8 14 7.9 12.6"/>
+    </g>
+    <g transform="translate(27.80 0)">
+      <path d="M1 4V11.1Q1 14 4.5 14Q8 14 8 11.1V4"/>
+    </g>
+    <g transform="translate(39.40 0)">
+      <path d="M1 4L3.4 14L6 6.6L8.6 14L11 4"/>
+    </g>
+    <g transform="translate(52.50 0)">
+      <path d="M1.3 9.2H7.9Q7.9 4 4.5 4Q1 4 1 9Q1 14 4.6 14Q6.8 14 7.9 12.6"/>
+    </g>
+    <g transform="translate(69.70 0)">
+      <path d="M1 4L3.4 14L6 6.6L8.6 14L11 4"/>
+    </g>
+    <g transform="translate(82.80 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+    </g>
+    <g transform="translate(94.40 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.5 4Q8 4 8 6.9V14"/>
+    </g>
+    <g transform="translate(106.00 0)">
+      <path d="M1 4V14"/>
+      <circle cx="1" cy="1.2" r="1"/>
+    </g>
+    <g transform="translate(110.60 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.5 4Q8 4 8 6.9V14"/>
+    </g>
+    <g transform="translate(122.20 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 4V16Q8 18.2 5 18.2Q2.6 18.2 1.9 17"/>
+    </g>
+    <g transform="translate(133.80 0)">
+      <path d="M1.3 9.2H7.9Q7.9 4 4.5 4Q1 4 1 9Q1 14 4.6 14Q6.8 14 7.9 12.6"/>
+    </g>
+    <g transform="translate(145.40 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.5 4Q8 4 8 6.9V14"/>
+    </g>
+    <g transform="translate(162.60 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+    </g>
+    <g transform="translate(174.20 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M1 4V18.2"/>
+    </g>
+    <g transform="translate(191.40 0)">
+      <path d="M2 4V16Q2 18.2 -0.5 17.5"/>
+      <circle cx="2" cy="1.2" r="1"/>
+    </g>
+    <g transform="translate(197.00 0)">
+      <path d="M1.3 9.2H7.9Q7.9 4 4.5 4Q1 4 1 9Q1 14 4.6 14Q6.8 14 7.9 12.6"/>
+    </g>
+    <g transform="translate(214.20 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.9 4"/>
+    </g>
+    <g transform="translate(222.80 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 4V14"/>
+    </g>
+    <g transform="translate(234.40 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 0V14"/>
+    </g>
+    <g transform="translate(246.00 0)">
+      <ellipse cx="4.5" cy="9" rx="3.5" ry="5"/>
+      <path d="M8 4V14"/>
+    </g>
+    <g transform="translate(257.60 0)">
+      <path d="M1 4V14"/>
+      <path d="M1 6.9Q1 4 4.9 4"/>
+    </g>
+  </g>
+</svg>
